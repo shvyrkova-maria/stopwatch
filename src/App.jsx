@@ -1,72 +1,50 @@
-import { Subject } from 'rxjs';
+import { BehaviorSubject, interval, EMPTY } from 'rxjs';
 import { useState, useEffect } from 'react';
-import { fromEvent, interval } from 'rxjs';
-import { map, mapTo, mergeMapTo, takeUntil } from 'rxjs/operators';
 
-const subject = new Subject();
+import { map, switchMap } from 'rxjs/operators';
 
-const initialState = {
-  value: 0,
-  step: 1000,
-  isCount: false,
-};
-
-let state = initialState;
-
-const store = {
-  init: () => subject.next(state),
-  subscribe: setState => subject.subscribe(setState),
-  start: () => {
-    state = {
-      ...state,
-      isCount: !state.isCount,
-    };
-    subject.next(state);
-  },
-  wait: () => {
-    state = {
-      ...state,
-      isCount: false,
-    };
-    subject.next(state);
-  },
-  reset: () => {
-    state = initialState;
-    subject.next(state);
-  },
-  initialState,
-};
+const paused = new BehaviorSubject(false);
 
 function App() {
-  const [stopWatch, setStopWatch] = useState(store.initialState);
+  const [сountValue, setCountValue] = useState(0);
+  const [isCount, setIsCount] = useState(false);
 
   useEffect(() => {
-    store.subscribe(setStopWatch);
-    store.init();
-  }, []);
+    // const timerInterval$ = interval(1000).pipe(
+    //   map(value => value * 1000)
+    // );
+    //  const sub = timerInterval$.subscribe(res => isCount && setCountValue(res));
+
+    const timerInterval$ = interval(1000).pipe(map(value => value * 1000));
+    const p = paused.pipe(switchMap(paused => (paused ? EMPTY : timerInterval$)));
+
+    const sub = p.subscribe(res => {
+      console.log(res);
+      isCount && setCountValue(res);
+    });
+
+    return () => {
+      sub.unsubscribe();
+      sub.complete();
+    };
+  }, [isCount]);
 
   const handleStartStopClick = e => {
-    store.start();
-    // const clicks = fromEvent(e.target, 'click');
-    // console.log(clicks);
-    interval(1000)
-      .pipe(
-        // takeUntil(clicks),
-        map(value => value * stopWatch.step),
-      )
-      .subscribe(res => setStopWatch({ ...state, value: res }));
+    setIsCount(!isCount);
+    paused.next(false);
+    // if (!isCount) {
+    //   setCountValue(0);
+    // }
+  };
 
-    // const seconds = interval(1000);
-    // const clicks = fromEvent(document, 'click');
-    // const secondsBeforeClick = seconds.pipe(takeUntil(clicks));
-    // const result = secondsBeforeClick.pipe(count());
-    // result.subscribe(x => console.log(x));
-  };
   const handleWaitClick = e => {
-    store.wait();
+    paused.next(true);
+    setIsCount(false);
   };
+
   const handleResetClick = e => {
-    store.reset();
+    setCountValue(0);
+    setIsCount(false);
   };
 
   const getTimeComponents = time => {
@@ -81,14 +59,14 @@ function App() {
 
   return (
     <div>
-      <div>{getTimeComponents(stopWatch.value)}</div>
-      <button type="button" onClick={handleStartStopClick}>
-        {!stopWatch.isCount ? 'Start' : 'Stop'}
+      <div>{getTimeComponents(сountValue)}</div>
+      <button type="button" onClick={handleStartStopClick} id="start">
+        {isCount ? 'Stop' : 'Start'}
       </button>
-      <button type="button" onClick={handleWaitClick}>
+      <button type="button" onClick={handleWaitClick} id="wait">
         Wait
       </button>
-      <button type="button" onClick={handleResetClick}>
+      <button type="button" onClick={handleResetClick} id="reset">
         Reset
       </button>
     </div>
@@ -96,32 +74,3 @@ function App() {
 }
 
 export default App;
-
-// const useObservable = observable => {
-//   const [state, setState] = useState();
-
-//   useEffect(() => {
-//     const sub = observable.subscribe(setState);
-//     return () => sub.unsubscribe();
-//   }, [observable]);
-
-//   return state;
-// };
-
-// const useObservable = ({ observable, setter }) => {
-//   useEffect(() => {
-//     const sub = observable.subscribe(result => setter(result));
-//     return () => sub.unsubscribe();
-//   }, [observable, setter]);
-// };
-
-// import Container from 'components/Container/Container';
-// import Display from 'components/Display/Display';
-// import Controls from 'components/Controls/Controls';
-
-// return (
-//   <Container>
-//     <Display />
-//     <Controls />
-//   </Container>
-// );
