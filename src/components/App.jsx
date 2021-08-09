@@ -2,6 +2,7 @@ import { BehaviorSubject, interval, EMPTY, fromEvent } from 'rxjs';
 import { useState, useEffect } from 'react';
 import { map, switchMap, debounceTime, buffer, filter } from 'rxjs/operators';
 import { getTimeComponents } from 'utils/getTimeComponents';
+import s from 'components/App.module.css';
 
 const pause = new BehaviorSubject(false);
 
@@ -50,21 +51,24 @@ function App() {
 
   const handleResetClick = () => {
     setCountValue(0);
-    setIsCount(false);
+    handleStartStopClick();
+    setIsCount(true);
   };
 
   return (
-    <div>
-      <div>{getTimeComponents(сountValue)}</div>
-      <button type="button" onClick={handleStartStopClick} id="start">
-        {isCount ? 'Stop' : 'Start'}
-      </button>
-      <button type="button" onClick={handleWaitClick} id="wait">
-        Wait
-      </button>
-      <button type="button" onClick={handleResetClick} id="reset">
-        Reset
-      </button>
+    <div className={s.container}>
+      <div className={s.display}>{getTimeComponents(сountValue)}</div>
+      <div className={s.controls}>
+        <button type="button" onClick={handleStartStopClick} className={s.button}>
+          {isCount ? 'Stop' : 'Start'}
+        </button>
+        <button type="button" onClick={handleWaitClick} className={s.button}>
+          Wait
+        </button>
+        <button type="button" onClick={handleResetClick} className={s.button}>
+          Reset
+        </button>
+      </div>
     </div>
   );
 }
